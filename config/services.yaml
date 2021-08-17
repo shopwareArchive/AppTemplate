@@ -24,15 +24,21 @@ services:
         resource: '../src/Controller'
         tags: [ 'controller.service_arguments' ]
 
+    Shopware\AppBundle\Shop\ShopRepositoryInterface:
+      class: App\Shop\ShopRepository
+
     # Psr7 Factory Services
-    Nyholm\Psr7\Factory\Psr17Factory:
+    GuzzleHttp\Psr7\HttpFactory:
+    Psr\Http\Message\ServerRequestFactoryInterface:
+      class: GuzzleHttp\Psr7\HttpFactory
+    Psr\Http\Message\StreamFactoryInterface:
+      class: GuzzleHttp\Psr7\HttpFactory
+    Psr\Http\Message\UploadedFileFactoryInterface:
+      class: GuzzleHttp\Psr7\HttpFactory
+    Psr\Http\Message\ResponseFactoryInterface:
+      class: GuzzleHttp\Psr7\HttpFactory
     Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface:
         class: Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory
-        arguments:
-            $serverRequestFactory: Nyholm\Psr7\Factory\Psr17Factory
-            $streamFactory: Nyholm\Psr7\Factory\Psr17Factory
-            $uploadedFileFactory: Nyholm\Psr7\Factory\Psr17Factory
-            $responseFactory: Nyholm\Psr7\Factory\Psr17Factory
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

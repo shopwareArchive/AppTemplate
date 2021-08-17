@@ -25,7 +25,7 @@ class ShopRepository implements ShopRepositoryInterface
             ->setValue('secret_key', ':secret_key')
             ->setParameter('shop_id', $shop->getId())
             ->setParameter('shop_url', $shop->getUrl())
-            ->setParameter('shop_secret', $shop->getSecretKey())
+            ->setParameter('shop_secret', $shop->getShopSecret())
             ->setParameter('api_key', $shop->getApiKey())
             ->setParameter('secret_key', $shop->getSecretKey());
 
@@ -56,14 +56,14 @@ class ShopRepository implements ShopRepositoryInterface
         $queryBuilder = $this->connection->createQueryBuilder();
         $queryBuilder
             ->update('shop')
-            ->setValue('shop_url', ':shop_url')
-            ->setValue('shop_secret', ':shop_secret')
-            ->setValue('api_key', ':api_key')
-            ->setValue('secret_key', ':secret_key')
+            ->set('shop_url', ':shop_url')
+            ->set('shop_secret', ':shop_secret')
+            ->set('api_key', ':api_key')
+            ->set('secret_key', ':secret_key')
             ->where('shop_id = :shop_id')
             ->setParameter('shop_id', $shop->getId())
             ->setParameter('shop_url', $shop->getUrl())
-            ->setParameter('shop_secret', $shop->getSecretKey())
+            ->setParameter('shop_secret', $shop->getShopSecret())
             ->setParameter('api_key', $shop->getApiKey())
             ->setParameter('secret_key', $shop->getSecretKey());
 
