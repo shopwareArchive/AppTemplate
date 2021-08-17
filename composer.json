@@ -77,7 +77,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "git@github.com:shopware/AppBundle.git"
+            "url": "https://github.com/shopware/AppBundle.git"
         }
     ]
 }
