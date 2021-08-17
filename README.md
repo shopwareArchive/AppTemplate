@@ -65,3 +65,107 @@ swdc pshell platform
 bin/console app:install --activate AppDaysDemo
 ```
 
+## Step 2
+
+Generate new migration:
+```shell
+swdc pshell appdaysdemo
+bin/console doctrine:migrations:generate
+```
+
+update migration with following content:
+```php
+    public function up(Schema $schema): void
+    {
+        $sql = <<<'SQL'
+        CREATE TABLE `order` (
+    		transaction_id char(64)  		NOT NULL PRIMARY KEY,
+            order_id       char(64)  		NOT NULL,
+			shop_id        varchar(255)  	NOT NULL,
+			status         varchar(255)  	NULL,
+			session_id     varchar(255)  	NULL,
+			return_url     varchar(4096)	NULL,
+			CONSTRAINT `fk.order.shop_id`
+                    FOREIGN KEY (`shop_id`)
+                    REFERENCES `shop` (`shop_id`)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE
+        )
+        DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB
+SQL;
+
+        $this->addSql($sql);
+    }
+
+    public function down(Schema $schema): void
+    {
+        $this->addSql('DROP TABLE `order`');
+    }
+```
+
+run migration
+```shell
+swdc pshell appdaysdemo
+bin/console doctrine:migrations:migrate
+```
+
+create class `OrderRepository` in `src/Repository` with
+```php
+    private Connection $connection;
+
+    public function __construct(Connection $connection)
+    {
+        $this->connection = $connection;
+    }
+
+    public function fetchOrder(string $transactionId): ?array
+    {
+        $value = $this->connection->createQueryBuilder()
+            ->select('*')
+            ->from('`order`')
+            ->where('transaction_id = :id')
+            ->setParameter('id', $transactionId)
+            ->execute()
+            ->fetchAssociative();
+
+        return $value !== false ? $value : null;
+    }
+
+    public function fetchOrdersByOrderId(string $orderId): array
+    {
+        return $this->connection->createQueryBuilder()
+            ->select('*')
+            ->from('`order`')
+            ->where('order_id = :id')
+            ->setParameter('id', $orderId)
+            ->execute()
+            ->fetchAllAssociative();
+    }
+
+    public function fetchColumn(string $column, string $transactionId): ?string
+    {
+        $value = $this->connection->createQueryBuilder()
+            ->select(sprintf('`%s`', $column))
+            ->from('`order`')
+            ->where('transaction_id = :id')
+            ->setParameter('id', $transactionId)
+            ->execute()
+            ->fetchColumn();
+
+        return $value !== false ? $value : null;
+    }
+
+    public function insertNewOrder(array $data): void
+    {
+        $this->connection->insert('`order`', $data);
+    }
+
+    public function updateOrderStatus(string $status, string $transactionId): void
+    {
+        $this->connection->update(
+            '`order`',
+            ['status' => $status],
+            ['transaction_id' => $transactionId]
+        );
+    }
+```
