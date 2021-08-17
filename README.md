@@ -504,3 +504,101 @@ Increase version in the manifest and update the app:
 swdc pshell platform
 bin/console app:refresh
 ```
+
+## Step 5
+
+Create WebhookController in `src/Controller` which extends AbstractController with
+```php
+private OrderRepository $orderRepository;
+    private SessionService $sessionService;
+    private ShopRepository $shopRepository;
+    private ClientFactoryInterface $clientFactory;
+
+    public function __construct(
+        OrderRepository $orderRepository, 
+        SessionService $sessionService, 
+        ShopRepository $shopRepository, 
+        ClientFactoryInterface $clientFactory
+    ) {
+        $this->orderRepository = $orderRepository;
+        $this->sessionService = $sessionService;
+        $this->shopRepository = $shopRepository;
+        $this->clientFactory = $clientFactory;
+    }
+
+    /**
+     * @Route("/webhook/order-cancel", name="webhook.order-cancel", methods={"POST"})
+     */
+    public function onOrderCanceled(SymfonyRequest $request): Response
+    {
+        $data = \json_decode($request->getContent(), true);
+
+        $charges = $this->getStripeChargesForOrder($data['data']['payload']['order']);
+
+        if (\count($charges) === 0) {
+            return new Response('', Response::HTTP_NO_CONTENT);
+        }
+        
+        $shop = $this->shopRepository->getShopFromId($data['source']['shopId']);
+        $client = $this->clientFactory->createClient($shop);
+
+        foreach ($charges as $transaction => $chargeIds) {
+            foreach ($chargeIds as $charge) {
+                Refund::create([
+                    'charge' => $charge
+                ]);
+            }
+
+            $this->orderRepository->updateOrderStatus('refunded', $transaction);
+
+            $client->sendRequest(
+                new Request(
+                    'POST',
+                    sprintf('/api/_action/order_transaction/%s/state/refund', $transaction)
+                )
+            );
+        }
+        
+        return new Response('', Response::HTTP_NO_CONTENT);
+    }
+
+    private function getStripeChargesForOrder(array $order): array
+    {
+        $charges = [];
+        foreach ($order['transactions'] as $transaction) {
+            $order = $this->orderRepository->fetchOrder($transaction['id']);
+
+            if ($order === null) {
+                // The transaction was not paid via Stripe
+                continue;
+            }
+
+            /** @var Charge $charge */
+            foreach ($this->sessionService->getChargesForSession($order['session_id']) as $charge) {
+                $charges[$transaction['id']][] = $charge->id;
+            }
+        }
+
+        return $charges;
+    }
+```
+
+Add webhook info to manifest.xml in platform:
+```xml
+    <permissions>
+        <read>order</read>
+        <update>order_transaction</update>
+        <create>state_machine_history</create>
+    </permissions>
+
+    <webhooks>
+        <webhook name="AppDaysDemo.onOrderCancel" url="http://appdaysdemo.dev.localhost/webhook/order-cancel" event="state_enter.order.state.cancelled"/>
+    </webhooks>
+```
+Notice: that you additionally need the order read privilege
+
+Increase version in the manifest and update the app:
+```shell
+swdc pshell platform
+bin/console app:refresh
+```

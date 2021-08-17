@@ -2,6 +2,7 @@
 
 namespace App\Service\Stripe;
 
+use Stripe\Charge;
 use Stripe\Checkout\Session;
 use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentIntent;
@@ -57,5 +58,19 @@ class SessionService
         }
 
         return PaymentIntent::retrieve($session->payment_intent);
+    }
+
+    /**
+     * @return \Generator|Charge[]
+     */
+    public function getChargesForSession(string $sessionId): \Generator
+    {
+        $session = Session::retrieve($sessionId);
+
+        if ($session->payment_intent) {
+            $payment = PaymentIntent::retrieve($session->payment_intent);
+
+            return $payment->charges->autoPagingIterator();
+        }
     }
 }
