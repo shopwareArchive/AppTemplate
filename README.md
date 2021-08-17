@@ -406,3 +406,101 @@ bin/console app:refresh
 Activate stripe payment in admin and assign payment method to sales channel
 
 Order and pay through stripe
+
+## Step 4
+
+Create `ActionController` in `src/Controller` which extends `AbstractController`
+```php
+private OrderRepository $orderRepository;
+    private ShopRepository $shopRepository;
+    private GuzzleClientFactory $clientFactory;
+    private SessionService $sessionService;
+
+    public function __construct(
+        OrderRepository $orderRepository, 
+        ShopRepository $shopRepository, 
+        GuzzleClientFactory $clientFactory,
+        SessionService $sessionService
+    ) {
+        $this->orderRepository = $orderRepository;
+        $this->shopRepository = $shopRepository;
+        $this->clientFactory = $clientFactory;
+        $this->sessionService = $sessionService;
+    }
+
+    /**
+     * @Route("/action/capture-payments", name="action.capture-payments", methods={"POST"})
+     */
+    public function capturePayments(RequestInterface $request): Response
+    {
+        $content = \json_decode($request->getBody()->getContents(), true);
+
+        $data = $content['data'];
+
+        $shop = $this->shopRepository->getShopFromId($content['source']['shopId']);
+        $client = $this->clientFactory->createClient($shop);
+
+        foreach ($data['ids'] as $orderId) {
+            foreach ($this->orderRepository->fetchOrdersByOrderId($orderId) as $order) {
+                $payment = $this->sessionService->getPaymentIntentFromSession($order['session_id']);
+                if (!$payment) {
+                    continue;
+                }
+                
+                $payment->capture();
+
+                $client->sendRequest(
+                    new Request(
+                        'POST',
+                        sprintf('/api/_action/order_transaction/%s/state/paid', $order['transaction_id'])
+                    )
+                );
+            }
+        }
+
+        return $this->sign([
+            'actionType' => 'reload',
+            'payload' => [],
+        ], $content['source']['shopId']);
+
+    }
+
+    private function sign(array $content, string $shopId): JsonResponse
+    {
+        $response = new JsonResponse($content);
+
+        $shop = $this->shopRepository->getShopFromId($shopId);
+
+        $hmac = \hash_hmac('sha256', $response->getContent(), $shop->getShopSecret());
+        $response->headers->set('shopware-app-signature', $hmac);
+
+        return $response;
+    }
+```
+
+Add action button config to app manifest:
+```xml
+    <admin>
+        <action-button action="captureCharge" entity="order" view="detail" url="http://appdaysdemo.dev.localhost/action/capture-payments">
+            <label>Capture payment</label>
+            <label lang="de-DE">Zahlung einziehen</label>
+        </action-button>
+
+        <action-button action="captureCharges" entity="order" view="list" url="http://appdaysdemo.dev.localhost/action/capture-payments">
+            <label>Capture payments</label>
+            <label lang="de-DE">Zahlungen einziehen</label>
+        </action-button>
+    </admin>
+
+    <permissions>
+        <update>order_transaction</update>
+        <create>state_machine_history</create>
+    </permissions>
+```
+Note that you need additional permission to update the order_transaction state
+
+Increase version in the manifest and update the app:
+```shell
+swdc pshell platform
+bin/console app:refresh
+```

@@ -4,6 +4,7 @@ namespace App\Service\Stripe;
 
 use Stripe\Checkout\Session;
 use Stripe\Exception\ApiErrorException;
+use Stripe\PaymentIntent;
 
 class SessionService
 {
@@ -45,5 +46,16 @@ class SessionService
         } catch (ApiErrorException $exception) {
             return 'fail';
         }
+    }
+
+    public function getPaymentIntentFromSession(string $sessionId): ?PaymentIntent
+    {
+        $session = Session::retrieve($sessionId);
+
+        if (!$session->payment_intent) {
+            return null;
+        }
+
+        return PaymentIntent::retrieve($session->payment_intent);
     }
 }
