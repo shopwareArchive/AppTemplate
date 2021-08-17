@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Redirecting ...{% endblock %}</title>
+    {% block stylesheets %}{% endblock %}
+</head>
+
+<body onload="sendReadyState()">
+{% block body %}
+    <p>Redirecting ...</p>
+{% endblock %}
+{% block javascripts %}
+    <script src="https://js.stripe.com/v3/"></script>
+{% endblock %}
+<script>
+    function sendReadyState() {
+        // Create an instance of the Stripe object with your publishable API key
+        var stripe = Stripe("{{ publicApiKey }}");
+        var sessionId = "{{ sessionId }}";
+        return stripe.redirectToCheckout({ sessionId });
+    }
+</script>
+</body>

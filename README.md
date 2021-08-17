@@ -169,3 +169,240 @@ create class `OrderRepository` in `src/Repository` with
         );
     }
 ```
+
+## Step 3
+
+Require Stripe php sdk and symfony twig pack:
+```shell
+swdc pshell appdaysdemo
+composer require stripe/stripe-php
+composer require symfony/twig-pack
+```
+
+Add stripe demo secrets to .env file
+```dotenv
+STRIPE_SECRET_KEY=sk_test_4eC39HqLyjWDarjtT1zdp7dc
+STRIPE_PUBLIC_KEY=pk_test_TYooMQauvdEDq54NiTphI7jx
+```
+
+Configure stripe php client in `public/index.php`:
+```php
+Stripe::setApiKey($_SERVER['STRIPE_SECRET_KEY']);
+```
+
+Create SessionService in `src/Service/Stripe`, copy source from github
+
+Create class `PaymentController` in `/src/Controller` which extends `AbstractController` with:
+```php
+    private ShopRepository $shopRepository;
+    private OrderRepository $orderRepository;
+    private SessionService $sessionService;
+
+    public function __construct(ShopRepository $shopRepository, OrderRepository $orderRepository, SessionService $sessionService)
+    {
+        $this->shopRepository = $shopRepository;
+        $this->orderRepository = $orderRepository;
+        $this->sessionService = $sessionService;
+    }
+
+    /**
+     * @Route("/payment/process", name="payment.process", methods={"POST"})
+     */
+    public function paymentStarted(Request $request): JsonResponse
+    {
+        $content = \json_decode($request->getContent(), true);
+
+        $session = $this->sessionService->startSession(
+            $content['order'],
+            $content['orderTransaction'],
+            $this->generateUrl(
+                'payment.redirect.success',
+                [
+                    'transaction' => $content['orderTransaction']['id'],
+                ],
+                RouterInterface::ABSOLUTE_URL
+            ),
+            $this->generateUrl(
+                'payment.redirect.cancel',
+                [
+                    'transaction' => $content['orderTransaction']['id'],
+                ],
+                RouterInterface::ABSOLUTE_URL
+            )
+        );
+
+        $this->orderRepository->insertNewOrder([
+            'transaction_id' => $content['orderTransaction']['id'],
+            'order_id' => $content['order']['id'],
+            'shop_id' => $content['source']['shopId'],
+            'session_id' => $session->id,
+            'return_url' => $content['returnUrl'],
+        ]);
+
+        return $this->sign(
+            [
+                'redirectUrl' => $this->generateUrl(
+                    'payment.pay',
+                    [
+                        'transaction' => $content['orderTransaction']['id'],
+                    ],
+                    RouterInterface::ABSOLUTE_URL
+                ),
+            ],
+            $content['source']['shopId']
+        );
+    }
+
+    /**
+     * @Route("/payment/finalize", name="payment.finalize", methods={"POST"})
+     */
+    public function paymentFinalized(Request $request): Response
+    {
+        $content = \json_decode($request->getContent(), true);
+
+        $status = $this->orderRepository->fetchColumn('status', $content['orderTransaction']['id']);
+
+        return $this->sign(
+            ['status' => $status ?? 'fail'],
+            $content['source']['shopId']
+        );
+    }
+
+    private function sign(array $content, string $shopId): JsonResponse
+    {
+        $response = new JsonResponse($content);
+
+        $shop = $this->shopRepository->getShopFromId($shopId);
+
+        $hmac = \hash_hmac('sha256', $response->getContent(), $shop->getShopSecret());
+        $response->headers->set('shopware-app-signature', $hmac);
+
+        return $response;
+    }
+```
+
+Create class `PayController` in `src/Controller` which extends `AbstractController`
+```php
+    private OrderRepository $orderRepository;
+
+    public function __construct(OrderRepository $orderRepository)
+    {
+        $this->orderRepository = $orderRepository;
+    }
+
+    /**
+     * @Route("/pay/{transaction}", name="payment.pay", methods={"GET"})
+     */
+    public function userForwarded(string $transaction): Response
+    {
+        $sessionId = $this->orderRepository->fetchColumn('session_id', $transaction);
+
+        if ($sessionId === null) {
+            throw new BadRequestHttpException('Invalid transaction');
+        }
+
+        return $this->render('base.html.twig', ['sessionId' => $sessionId, 'publicApiKey' => $_SERVER['STRIPE_PUBLIC_KEY']]);
+    }
+```
+
+create `templates/base.html.twig` template with:
+```twig
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Redirecting ...{% endblock %}</title>
+    {% block stylesheets %}{% endblock %}
+</head>
+
+<body onload="sendReadyState()">
+{% block body %}
+    <p>Redirecting ...</p>
+{% endblock %}
+{% block javascripts %}
+    <script src="https://js.stripe.com/v3/"></script>
+{% endblock %}
+<script>
+    function sendReadyState() {
+        // Create an instance of the Stripe object with your publishable API key
+        var stripe = Stripe("{{ publicApiKey }}");
+        var sessionId = "{{ sessionId }}";
+        return stripe.redirectToCheckout({ sessionId });
+    }
+</script>
+</body>
+```
+
+create `RedirectController` in `src/Controller` which extends `AbstractController` with
+```php
+    private OrderRepository $orderRepository;
+    private SessionService $sessionService;
+
+    public function __construct(OrderRepository $orderRepository, SessionService $sessionService)
+    {
+        $this->orderRepository = $orderRepository;
+        $this->sessionService = $sessionService;
+    }
+
+    /**
+     * @Route("/redirect/success/{transaction}", name="payment.redirect.success", methods={"GET"})
+     */
+    public function redirectSuccess(string $transaction): Response
+    {
+        $order = $this->updateStatus($transaction);
+
+        return new RedirectResponse($order['return_url']);
+    }
+
+    /**
+     * @Route("/redirect/cancel/{transaction}", name="payment.redirect.cancel", methods={"GET"})
+     */
+    public function redirectCancel(string $transaction): Response
+    {
+        $order = $this->updateStatus($transaction, 'cancel');
+
+        return new RedirectResponse($order['return_url']);
+    }
+
+    private function updateStatus(string $transactionId, ?string $newStatus = null): array
+    {
+        $order = $this->orderRepository->fetchOrder($transactionId);
+
+        if ($order === null) {
+            throw new BadRequestHttpException('Invalid session');
+        }
+
+        if ($newStatus === null) {
+            $newStatus = $this->sessionService->getPaymentStatusForSession($order['session_id']);
+        }
+
+        $this->orderRepository->updateOrderStatus($newStatus, $transactionId);
+
+        return $order;
+    }
+```
+
+add payment info to manifest in platform manifest file:
+```xml
+    <payments>
+        <payment-method>
+            <identifier>stripe</identifier>
+            <name>Stripe payment</name>
+            <name lang="de-DE">Zahlen mit Stripe</name>
+            <description>This payment will be handled with Stripe - Do not use in production</description>
+            <description lang="de-DE">Diese Zahlung wird mit Stripe durchgeführt - Nicht im Produktivbetrieb verwenden</description>
+            <pay-url>http://appdaysdemo.dev.localhost/payment/process</pay-url>
+            <finalize-url>http://appdaysdemo.dev.localhost/payment/finalize</finalize-url>
+        </payment-method>
+    </payments>
+```
+
+upgrade version in the manifest and update app by
+```
+swdc pshell platform
+bin/console app:refresh
+```
+
+Activate stripe payment in admin and assign payment method to sales channel
+
+Order and pay through stripe
