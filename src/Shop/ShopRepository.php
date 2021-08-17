@@ -1,0 +1,82 @@
+<?php declare(strict_types=1);
+
+namespace App\Shop;
+
+use Doctrine\DBAL\Connection;
+use Shopware\AppBundle\Shop\ShopEntity;
+use Shopware\AppBundle\Shop\ShopRepositoryInterface;
+
+class ShopRepository implements ShopRepositoryInterface
+{
+    public function __construct(
+        private Connection $connection
+    ) {
+    }
+
+    public function createShop(ShopEntity $shop): void
+    {
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder
+            ->insert('shop')
+            ->setValue('shop_id', ':shop_id')
+            ->setValue('shop_url', ':shop_url')
+            ->setValue('shop_secret', ':shop_secret')
+            ->setValue('api_key', ':api_key')
+            ->setValue('secret_key', ':secret_key')
+            ->setParameter('shop_id', $shop->getId())
+            ->setParameter('shop_url', $shop->getUrl())
+            ->setParameter('shop_secret', $shop->getSecretKey())
+            ->setParameter('api_key', $shop->getApiKey())
+            ->setParameter('secret_key', $shop->getSecretKey());
+
+        $queryBuilder->execute();
+    }
+
+    public function getShopFromId(string $shopId): ShopEntity
+    {
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder->select('shop_id', 'shop_url', 'shop_secret', 'api_key', 'secret_key')
+            ->from('shop')
+            ->where('shop_id = :shop_id')
+            ->setParameter('shop_id', $shopId);
+
+        $shop = $queryBuilder->execute()->fetchAssociative();
+
+        return new ShopEntity(
+            $shop['shop_id'],
+            $shop['shop_url'],
+            $shop['shop_secret'],
+            $shop['api_key'],
+            $shop['secret_key'],
+        );
+    }
+
+    public function updateShop(ShopEntity $shop): void
+    {
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder
+            ->update('shop')
+            ->setValue('shop_url', ':shop_url')
+            ->setValue('shop_secret', ':shop_secret')
+            ->setValue('api_key', ':api_key')
+            ->setValue('secret_key', ':secret_key')
+            ->where('shop_id = :shop_id')
+            ->setParameter('shop_id', $shop->getId())
+            ->setParameter('shop_url', $shop->getUrl())
+            ->setParameter('shop_secret', $shop->getSecretKey())
+            ->setParameter('api_key', $shop->getApiKey())
+            ->setParameter('secret_key', $shop->getSecretKey());
+
+        $queryBuilder->execute();
+    }
+
+    public function deleteShop(ShopEntity $shop): void
+    {
+        $queryBuilder = $this->connection->createQueryBuilder();
+        $queryBuilder->delete('shop')
+            ->where('shop_id = :shop_id')
+            ->setParameter('shop_id', $shop->getId());
+
+        $queryBuilder->execute();
+    }
+}
