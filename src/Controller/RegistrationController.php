@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\RouterInterface;
 
 class RegistrationController extends AbstractController
 {
@@ -24,7 +25,7 @@ class RegistrationController extends AbstractController
     {
         $proof = $this->registrationService->handleShopRegistrationRequest(
             $this->psrHttpFactory->createRequest($request),
-            $this->generateUrl('shopware.app.confirm')
+            $this->generateUrl('shopware.app.confirm', [], RouterInterface::ABSOLUTE_URL)
         );
 
         return new JsonResponse($proof, Response::HTTP_OK);
@@ -37,6 +38,6 @@ class RegistrationController extends AbstractController
             $this->psrHttpFactory->createRequest($request)
         );
 
-        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }

@@ -1,7 +1,7 @@
 shopware_app:
   metadata:
     version: 1.0.0
-    name: myAppName
+    name: '%env(APP_NAME)%'
     label:
       default: english label
       de-DE: german label
