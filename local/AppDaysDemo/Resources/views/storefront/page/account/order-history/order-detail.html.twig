@@ -1,0 +1,23 @@
+{% sw_extends '@Storefront/storefront/page/account/order-history/order-detail.html.twig' %}
+
+{% block page_account_order_item_detail_payment_method %}
+    {{ parent() }}
+
+    {% if order.transactions|length > 0 %}
+        <dt class="col-6 col-md-5">{{ "account.orderItemPaymentMethodDetails"|trans|sw_sanitize }}</dt>
+
+        <dd class="col-6 col-md-7 order-item-detail-labels-value">
+            {% for transaction in order.transactions %}
+                {% if transaction.customFields.AppDaysDemoStripeDetails is defined %}
+                    {% for cardDetails in transaction.customFields.AppDaysDemoStripeDetails %}
+                        {{ "account.orderItemCreditCardDetails"|trans({
+                            '%cardNumber%': cardDetails.number,
+                            '%expiry%': cardDetails.expiry
+                        })|sw_sanitize }}
+                        <br>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </dd>
+    {% endif %}
+{% endblock %}

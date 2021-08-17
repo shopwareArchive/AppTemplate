@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
+    <meta>
+        <name>AppDaysDemo</name>
+        <label>Demo App for Stripe Payments</label>
+        <label lang="de-DE">Demo App für Stripe Payments</label>
+        <description>Example App - Do not use in production</description>
+        <description lang="de-DE">Beispiel App - Nicht im Produktivbetrieb verwenden</description>
+        <author>shopware AG</author>
+        <copyright>(c) by shopware AG</copyright>
+        <version>1.0.5</version>
+        <license>MIT</license>
+    </meta>
+
+    <setup>
+        <registrationUrl>http://appdaysdemo.dev.localhost/register</registrationUrl> <!-- replace local url with real one -->
+        <secret>myAppSecret</secret>
+    </setup>
+
+    <admin>
+        <action-button action="captureCharge" entity="order" view="detail" url="http://appdaysdemo.dev.localhost/action/capture-payments">
+            <label>Capture payment</label>
+            <label lang="de-DE">Zahlung einziehen</label>
+        </action-button>
+
+        <action-button action="captureCharges" entity="order" view="list" url="http://appdaysdemo.dev.localhost/action/capture-payments">
+            <label>Capture payments</label>
+            <label lang="de-DE">Zahlungen einziehen</label>
+        </action-button>
+    </admin>
+
+    <permissions>
+        <read>order</read>
+        <update>order_transaction</update>
+        <create>state_machine_history</create>
+    </permissions>
+
+    <webhooks>
+        <webhook name="AppDaysDemo.onOrderCancel" url="http://appdaysdemo.dev.localhost/webhook/order-cancel" event="state_enter.order.state.cancelled"/>
+    </webhooks>
+
+    <payments>
+        <payment-method>
+            <identifier>stripe</identifier>
+            <name>Stripe payment</name>
+            <name lang="de-DE">Zahlen mit Stripe</name>
+            <description>This payment will be handled with Stripe - Do not use in production</description>
+            <description lang="de-DE">Diese Zahlung wird mit Stripe durchgeführt - Nicht im Produktivbetrieb verwenden</description>
+            <pay-url>http://appdaysdemo.dev.localhost/payment/process</pay-url>
+            <finalize-url>http://appdaysdemo.dev.localhost/payment/finalize</finalize-url>
+        </payment-method>
+    </payments>
+</manifest>

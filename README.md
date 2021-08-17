@@ -505,6 +505,9 @@ swdc pshell platform
 bin/console app:refresh
 ```
 
+Use the `Charge payments` action button in the admin order detail page on an open order
+See that the payment state changes from `authorized` to `paid`
+
 ## Step 5
 
 Create WebhookController in `src/Controller` which extends AbstractController with
@@ -602,3 +605,60 @@ Increase version in the manifest and update the app:
 swdc pshell platform
 bin/console app:refresh
 ```
+
+Set a stripe order state to cancelled in the admin and see that the payment is automatically updated to refunded
+
+## Step 6
+
+Update `RedirectController` to add creditCard infos to orderTransaction entities as custom fields: 
+```php
+        $order = $this->updateStatus($transaction);
+
+        $stripeDetails = [];
+
+        /** @var Charge $charge */
+        foreach ($this->sessionService->getChargesForSession($order['session_id']) as $charge) {
+            $stripeDetails[] = [
+                'number' => '****' . $charge->payment_method_details->card->last4,
+                'brand' => $charge->payment_method_details->card->brand,
+                'expiry' => $charge->payment_method_details->card->exp_month . '/' . $charge->payment_method_details->card->exp_year,
+
+            ];
+        }
+
+        if (\count($stripeDetails) === 0) {
+            return RedirectResponse::create($order['return_url']);
+        }
+
+        $shop = $this->shopRepository->getShopFromId($order['shop_id']);
+        $client = $this->clientFactory->createClient($shop);
+
+        $client->sendRequest(
+            new Request(
+                'PATCH',
+                'api/order-transaction/' . $transaction,
+                [
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/vnd.api+json',
+                ],
+                \json_encode([
+                    'customFields' => [
+                        'AppDaysDemoStripeDetails' => $stripeDetails,
+                    ],
+                ])
+            )
+        );
+
+        return new RedirectResponse($order['return_url']);
+```
+
+Copy resources folder from `local/AppDaysDemo/resources` into platform `custom/apps/AppDaysDemo`
+
+Increase version in the manifest and update the app and clear the cache:
+```shell
+swdc pshell platform
+bin/console app:refresh
+bin/console cache:clear
+```
+
+Make a new Stripe order and check in the storefront account order overview that the card details are displayed

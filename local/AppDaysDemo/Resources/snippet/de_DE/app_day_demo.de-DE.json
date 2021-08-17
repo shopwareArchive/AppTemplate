@@ -1,0 +1,6 @@
+{
+  "account": {
+    "orderItemPaymentMethodDetails": "Zahlungsdetails:",
+    "orderItemCreditCardDetails": "Kreditkarte: %cardNumber%, Ablaufdatum: %expiry%"
+  }
+}
