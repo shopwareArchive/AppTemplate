@@ -2,6 +2,11 @@
 
 namespace App\Services\Stripe;
 
+use Stripe\Charge;
+use Stripe\Checkout\Session;
+use Stripe\Exception\ApiErrorException;
+use Stripe\PaymentIntent;
+
 class SessionService
 {
     public function startSession(array $order, array $transaction, string $successUrl, string $cancelUrl): Session
