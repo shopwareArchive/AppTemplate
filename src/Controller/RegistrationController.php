@@ -25,13 +25,13 @@ class RegistrationController extends AbstractController
     {
         $proof = $this->registrationService->handleShopRegistrationRequest(
             $this->psrHttpFactory->createRequest($request),
-            $this->generateUrl('shopware.app.confirm', [], RouterInterface::ABSOLUTE_URL)
+            $this->generateUrl('shopware_app.confirm', [], RouterInterface::ABSOLUTE_URL)
         );
 
         return new JsonResponse($proof, Response::HTTP_OK);
     }
 
-    #[Route('/confirm', name: 'shopware.app.confirm', methods: ['POST'])]
+    #[Route('/confirm', name: 'shopware_app.confirm', methods: ['POST'])]
     public function confirm(Request $request): Response
     {
         $this->registrationService->handleConfirmation(
