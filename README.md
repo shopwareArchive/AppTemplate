@@ -1,4 +1,5 @@
-# App Server Template based on Symfony framework
+# App Server Template based on Symfony framework 
+test
 
 This is an app server template for developing an app server. This should be forked and used as base for your app server
 
