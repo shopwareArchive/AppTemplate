@@ -2,14 +2,14 @@
 
 namespace App\Controller;
 
+use App\Attribute\ConfirmationRoute;
+use App\Attribute\RegistrationRoute;
 use Shopware\AppBundle\Registration\RegistrationService;
-use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
 
 class RegistrationController extends AbstractController
@@ -20,7 +20,7 @@ class RegistrationController extends AbstractController
     ) {
     }
 
-    #[Route('/register', name: 'shopware_app.register', methods: ['GET'])]
+    #[RegistrationRoute('/register', name: 'shopware_app.register', methods: ['GET'])]
     public function register(Request $request): Response
     {
         $proof = $this->registrationService->handleShopRegistrationRequest(
@@ -31,7 +31,7 @@ class RegistrationController extends AbstractController
         return new JsonResponse($proof, Response::HTTP_OK);
     }
 
-    #[Route('/confirm', name: 'shopware_app.confirm', methods: ['POST'])]
+    #[ConfirmationRoute('/confirm', name: 'shopware_app.confirm', methods: ['POST'])]
     public function confirm(Request $request): Response
     {
         $this->registrationService->handleConfirmation(
