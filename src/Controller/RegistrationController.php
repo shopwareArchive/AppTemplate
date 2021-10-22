@@ -2,8 +2,8 @@
 
 namespace App\Controller;
 
-use App\Attribute\ConfirmationRoute;
-use App\Attribute\RegistrationRoute;
+use Shopware\AppBundle\Attribute\ConfirmationRoute;
+use Shopware\AppBundle\Attribute\RegistrationRoute;
 use Shopware\AppBundle\Registration\RegistrationService;
 use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
