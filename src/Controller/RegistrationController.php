@@ -20,8 +20,8 @@ class RegistrationController extends AbstractController
     ) {
     }
 
-    #[RegistrationRoute('/register', name: 'shopware_app.register', methods: ['GET'])]
-    public function register(Request $request): Response
+    #[RegistrationRoute(name: 'shopware_app.register', path: '/register')]
+    public function register(Request $request): JsonResponse
     {
         $proof = $this->registrationService->handleShopRegistrationRequest(
             $this->psrHttpFactory->createRequest($request),
@@ -31,8 +31,8 @@ class RegistrationController extends AbstractController
         return new JsonResponse($proof, Response::HTTP_OK);
     }
 
-    #[ConfirmationRoute('/confirm', name: 'shopware_app.confirm', methods: ['POST'])]
-    public function confirm(Request $request): Response
+    #[ConfirmationRoute(name: 'shopware_app.confirm', path: '/confirm')]
+    public function confirm(Request $request): JsonResponse
     {
         $this->registrationService->handleConfirmation(
             $this->psrHttpFactory->createRequest($request)
@@ -40,4 +40,5 @@ class RegistrationController extends AbstractController
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
+
 }
