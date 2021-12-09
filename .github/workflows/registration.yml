@@ -1,0 +1,25 @@
+name: Test registration process
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-registration-process:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Start containers
+        run: 'docker-compose up -d'
+
+      - name: Install dependencies
+        run: 'docker-compose exec -T app composer install --no-interaction'
+
+      - name: Run migrations
+        run: 'docker-compose exec -T app php bin/console doctrine:migrations:migrate'
+
+      - name: Install app
+        run: 'docker-compose exec -T shopware php bin/console app:install AppTemplate'

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/Framework/App/Manifest/Schema/manifest-1.0.xsd">
+    <meta>
+        <name>AppTemplate</name>
+        <label>AppTemplate</label>
+        <label lang="de-DE">AppTemplate</label>
+        <author>shopware AG</author>
+        <license>MIT</license>
+        <copyright>(c) shopware AG</copyright>
+        <version>1.0.0</version>
+    </meta>
+
+    <setup>
+        <registrationUrl>http://app:8000/register</registrationUrl>
+        <secret>01f17b06402f0a24e6d2b084a6d18a87</secret>
+    </setup>
+</manifest>

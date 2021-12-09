@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  shopware:
+    image: dockware/play:latest
+    volumes:
+      - ./tests/manifest.xml:/var/www/html/custom/apps/AppTemplate/manifest.xml:ro
+
+  app:
+    image: shopware/development:8.0-composer-2
+    volumes:
+      - ./:/app:rw
+
+  db:
+    image: mariadb:10.4
+    environment:
+      MYSQL_DATABASE: apptemplate
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+      MYSQL_ROOT_PASSWORD: root
