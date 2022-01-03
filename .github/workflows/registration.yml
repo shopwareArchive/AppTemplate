@@ -1,9 +1,9 @@
 name: Test registration process
 on:
   push:
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   test-registration-process:
