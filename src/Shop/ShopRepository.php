@@ -4,6 +4,7 @@ namespace App\Shop;
 
 use Doctrine\DBAL\Connection;
 use Shopware\AppBundle\Shop\ShopEntity;
+use Shopware\AppBundle\Shop\ShopInterface;
 use Shopware\AppBundle\Shop\ShopRepositoryInterface;
 
 class ShopRepository implements ShopRepositoryInterface
@@ -13,7 +14,7 @@ class ShopRepository implements ShopRepositoryInterface
     ) {
     }
 
-    public function createShop(ShopEntity $shop): void
+    public function createShop(ShopInterface $shop): void
     {
         $queryBuilder = $this->connection->createQueryBuilder();
         $queryBuilder
@@ -32,7 +33,7 @@ class ShopRepository implements ShopRepositoryInterface
         $queryBuilder->execute();
     }
 
-    public function getShopFromId(string $shopId): ShopEntity
+    public function getShopFromId(string $shopId): ShopInterface
     {
         $queryBuilder = $this->connection->createQueryBuilder();
         $queryBuilder->select('shop_id', 'shop_url', 'shop_secret', 'api_key', 'secret_key')
@@ -51,7 +52,7 @@ class ShopRepository implements ShopRepositoryInterface
         );
     }
 
-    public function updateShop(ShopEntity $shop): void
+    public function updateShop(ShopInterface $shop): void
     {
         $queryBuilder = $this->connection->createQueryBuilder();
         $queryBuilder
@@ -70,7 +71,7 @@ class ShopRepository implements ShopRepositoryInterface
         $queryBuilder->execute();
     }
 
-    public function deleteShop(ShopEntity $shop): void
+    public function deleteShop(ShopInterface $shop): void
     {
         $queryBuilder = $this->connection->createQueryBuilder();
         $queryBuilder->delete('shop')
