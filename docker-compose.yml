@@ -11,8 +11,8 @@ services:
     volumes:
       - ./:/app:rw
 
-  db:
-    image: mariadb:10.4
+  mysql:
+    image: mysql:8
     environment:
       MYSQL_DATABASE: apptemplate
       MYSQL_USER: app
