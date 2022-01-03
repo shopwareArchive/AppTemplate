@@ -18,6 +18,9 @@ jobs:
       - name: Install dependencies
         run: 'docker-compose exec -T app composer install --no-interaction'
 
+      - name: Wait for MySQL server
+        run: 'docker-compose run -e WAIT_HOSTS=mysql:3306 wait-for-it'
+
       - name: Run migrations
         run: 'docker-compose exec -T app php bin/console doctrine:migrations:migrate'
 
