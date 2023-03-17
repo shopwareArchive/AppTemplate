@@ -33,7 +33,7 @@ class ShopRepository implements ShopRepositoryInterface
         $queryBuilder->execute();
     }
 
-    public function getShopFromId(string $shopId): ShopInterface
+    public function getShopFromId(string $shopId): ?ShopInterface
     {
         $queryBuilder = $this->connection->createQueryBuilder();
         $queryBuilder->select('shop_id', 'shop_url', 'shop_secret', 'api_key', 'secret_key')
@@ -42,6 +42,10 @@ class ShopRepository implements ShopRepositoryInterface
             ->setParameter('shop_id', $shopId);
 
         $shop = $queryBuilder->execute()->fetchAssociative();
+
+        if ($shop === false) {
+            return null;
+        }
 
         return new ShopEntity(
             $shop['shop_id'],
